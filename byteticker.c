@@ -2,6 +2,7 @@
 /* getconf LFS_CFLAGS */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -9,16 +10,11 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <locale.h>
 
 void *byteticker(void *);
 int bytepiper(unsigned long long int bufsize);
 void byebye(int);
-char *commafy_ll(long long ll);
-char *commafy_ll_1(long long ll);
-char *commafy_ll_2(long long ll);
-char *commafy_ll_3(long long ll);
-char *commafy_ll_4(long long ll);
-char *commafy_ll_5(long long ll);
 char *speedstr(double bps);
 
 void usage(int argc, char **argv)
@@ -39,6 +35,8 @@ int main(int argc, char **argv)
 	unsigned long long int bufsiz = 1;
 	char s[1024];
 	pthread_t th;
+
+  setlocale(LC_NUMERIC, "");
 
 	if(argc < 2)
 	{
@@ -126,7 +124,6 @@ long whichsifx(double x, double *d)
 	                  { *d = doubleY; return 8; } // Y
 }
 
-char *commafy_ll_ss(long long ll) { static char s[1024]; strcpy(s, commafy_ll(ll)); return s; }
 char *speedstr(double bps)
 {
 	static char s[1024];
@@ -148,9 +145,7 @@ char *speedstr(double bps)
 
 //	fprintf(stderr, "\nkexp = %d, divisor = %g\n", kexp, divisor);
 
-	sprintf(s, "%4s %s",
-		commafy_ll_ss((long long)(bps / divisor)),
-		sifx[kexp]);
+  sprintf(s, "%'5lld %s", (long long)(bps / divisor), sifx[kexp]);
 	
 	return s;
 }
@@ -189,7 +184,7 @@ void *byteticker(void *arg)
 		elapsed = ( (double)stoptimer() ) / 1000000000;
 		speed = ( (double)accumulator )  / elapsed;
 
-		fprintf(stderr, "\r%20s bytes ++ %s", commafy_ll_1(accumulator), speedstr(speed));
+		fprintf(stderr, "\r%'20lld bytes ++ %s", accumulator, speedstr(speed));
 		fflush(stdout);
 	}
 	fprintf(stderr, "\n");
@@ -201,60 +196,3 @@ void byebye(int n)
 	exit(0);
 }
 
-char *commafy_ll_1(long long ll) { static char s[1024]; strcpy(s, commafy_ll(ll)); return s; }
-char *commafy_ll_2(long long ll) { static char s[1024]; strcpy(s, commafy_ll(ll)); return s; }
-char *commafy_ll_3(long long ll) { static char s[1024]; strcpy(s, commafy_ll(ll)); return s; }
-char *commafy_ll_4(long long ll) { static char s[1024]; strcpy(s, commafy_ll(ll)); return s; }
-char *commafy_ll_5(long long ll) { static char s[1024]; strcpy(s, commafy_ll(ll)); return s; }
-
-char *commafy_ll(long long ll)
-{
-	static char s[1024];
-	char s2[8];
-	long long md;
-	static long state = 0;
-	static char
-		*fmt1="%.3lld,",
-		*fmt2p="%lld,",
-		*fmt2n="-%lld,",
-		*fmt3="%.3lld",
-		*fmt4p="%lld",
-		*fmt4n="-%lld";
-	static char *fmt2, *fmt4;
-	
-	if(state == 0)
-	{
-		bzero(s, 1024);
-		if(ll < 0)
-		{
-			ll = -ll;
-			fmt2 = fmt2n;
-			fmt4 = fmt4n;
-		}
-		else
-		{
-			fmt2 = fmt2p;
-			fmt4 = fmt4p;
-		}
-	}
-	state++;
-
-	md = ll / 1000;
-	if(md >= 1000) commafy_ll(md);
-	
-	if(md%1000 > 0)
-	{
-		sprintf(s2, (*s)?fmt1:fmt2, md%1000);
-		strcat(s, s2);
-	}
-
-	state--;
-	
-	if(state == 0)
-	{
-		sprintf(s2, (*s)?fmt3:fmt4, ll%1000);
-		strcat(s, s2);
-	}
-	
-	return s;
-}
