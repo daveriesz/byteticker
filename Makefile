@@ -9,7 +9,7 @@ CINCLUDE =
 
 LDFLAGS  = $(LDDIRS) $(LDLIBS)
 LDDIRS   = 
-LDLIBS   = -lrt
+LDLIBS   = -lrt -lpthread
 
 all: $(PROGRAM)
 
